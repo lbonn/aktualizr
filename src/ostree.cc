@@ -6,6 +6,7 @@
 
 #include <gio/gio.h>
 #include <json/json.h>
+#include <ostree-1/ostree-async-progress.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -14,6 +15,14 @@
 #include "logging.h"
 #include "utils.h"
 
+static void aktualizr_progress_cb(OstreeAsyncProgress *progress, gpointer data __attribute__((unused))) {
+  char *status = ostree_async_progress_get_status(progress);
+  if (status) {
+    LOG_INFO << "Pull status: " << status;
+    g_free(status);
+  }
+}
+
 data::InstallOutcome OstreeManager::pull(const boost::filesystem::path &sysroot_path, const std::string &ostree_server,
                                          const KeyManager &keys, const std::string &refhash) {
   const char *const commit_ids[] = {refhash.c_str()};
@@ -21,6 +30,7 @@ data::InstallOutcome OstreeManager::pull(const boost::filesystem::path &sysroot_
   GError *error = NULL;
   GVariantBuilder builder;
   GVariant *options;
+  OstreeAsyncProgress *progress;
 
   std::shared_ptr<OstreeSysroot> sysroot = OstreeManager::LoadSysroot(sysroot_path);
   std::shared_ptr<OstreeRepo> repo = LoadRepo(sysroot, &error);
@@ -55,7 +65,8 @@ data::InstallOutcome OstreeManager::pull(const boost::filesystem::path &sysroot_
 
   options = g_variant_builder_end(&builder);
 
-  if (!ostree_repo_pull_with_options(repo.get(), remote, options, NULL, cancellable, &error)) {
+  progress = ostree_async_progress_new_and_connect(aktualizr_progress_cb, NULL);
+  if (!ostree_repo_pull_with_options(repo.get(), remote, options, progress, cancellable, &error)) {
     LOG_ERROR << "Error of pulling image: " << error->message;
     data::InstallOutcome install_outcome(data::INSTALL_FAILED, error->message);
     g_error_free(error);
