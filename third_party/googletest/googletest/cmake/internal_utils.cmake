@@ -192,7 +192,7 @@ function(cxx_executable_with_flags name cxx_flags libs)
   endif()
   # To support mixing linking in static and dynamic libraries, link each
   # library in with an extra call to target_link_libraries.
-  foreach (lib "${libs}")
+  foreach (lib "${AKTUALIZR_EXTERNAL_LIBS}")
     target_link_libraries(${name} ${lib})
   endforeach()
 endfunction()
@@ -204,7 +204,7 @@ endfunction()
 # the source file list.
 function(cxx_executable name dir libs)
   cxx_executable_with_flags(
-    ${name} "${cxx_default}" "${libs}" "${dir}/${name}.cc" ${ARGN})
+    ${name} "${cxx_default}" "${AKTUALIZR_EXTERNAL_LIBS}" "${dir}/${name}.cc" ${ARGN})
 endfunction()
 
 # Sets PYTHONINTERP_FOUND and PYTHON_EXECUTABLE.
@@ -215,7 +215,7 @@ find_package(PythonInterp)
 # creates a named C++ test that depends on the given libs and is built
 # from the given source files with the given compiler flags.
 function(cxx_test_with_flags name cxx_flags libs)
-  cxx_executable_with_flags(${name} "${cxx_flags}" "${libs}" ${ARGN})
+  cxx_executable_with_flags(${name} "${cxx_flags}" "${AKTUALIZR_EXTERNAL_LIBS}" ${ARGN})
   add_test(${name} ${name})
 endfunction()
 
@@ -225,7 +225,7 @@ endfunction()
 # built from the given source files.  Unlike cxx_test_with_flags,
 # test/name.cc is already implicitly included in the source file list.
 function(cxx_test name libs)
-  cxx_test_with_flags("${name}" "${cxx_default}" "${libs}"
+  cxx_test_with_flags("${name}" "${cxx_default}" "${AKTUALIZR_EXTERNAL_LIBS}"
     "test/${name}.cc" ${ARGN})
 endfunction()
 
