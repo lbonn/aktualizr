@@ -1,0 +1,26 @@
+name: aktualizr CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  coverage:
+    name: coverage on Ubuntu Bionic
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_TAG: aktualizr-ci/bionic
+      DOCKERFILE: docker/Dockerfile.ubuntu.bionic
+      DARGS: >-
+        -eTEST_CMAKE_BUILD_TYPE=Valgrind
+        -eTEST_WITH_COVERAGE=1
+        -eTEST_WITH_P11=1
+        -eTEST_WITH_DOCKERAPP=1
+        -eTEST_WITH_FAULT_INJECTION=1
+        -eTEST_TESTSUITE_EXCLUDE=credentials
+        -eTEST_SOTA_PACKED_CREDENTIALS=dummy-credentials
+    steps:
+      - name: docker build
+        run: docker build -t "$DOCKER_TAG" -f "$DOCKERFILE"
+      - name: test
+        run: docker run -v "$PWD:$PWD" -w "$PWD" $DARGS -it "$DOCKER_TAG" ./scripts/test.sh
